@@ -11,7 +11,10 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bb529140-c748-419e-bff5-2824a63da31d" name="Default" comment="" />
+    <list default="true" id="bb529140-c748-419e-bff5-2824a63da31d" name="Default" comment="">
+      <change beforePath="" afterPath="$PROJECT_DIR$/.gitignore" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+    </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <ignored path="$PROJECT_DIR$/bin/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -24,17 +27,27 @@
   <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="cpu_info.h" pinned="false" current-in-tab="true">
+      <file leaf-file-name="cpu_info.h" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/include/cpu_info.h">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="401">
-              <caret line="130" column="0" lean-forward="true" selection-start-line="130" selection-start-column="0" selection-end-line="130" selection-end-column="0" />
+            <state relative-caret-position="384">
+              <caret line="129" column="26" lean-forward="true" selection-start-line="129" selection-start-column="26" selection-end-line="129" selection-end-column="26" />
               <folding>
                 <element signature="e#1204#1244#0" expanded="true" />
                 <element signature="e#1275#1315#0" expanded="true" />
                 <element signature="e#1531#1829#0" expanded="true" />
                 <element signature="e#2560#2754#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name=".gitignore" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/.gitignore">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="0">
+              <caret line="0" column="4" lean-forward="false" selection-start-line="0" selection-start-column="4" selection-end-line="0" selection-end-column="4" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -61,6 +74,7 @@
         <option value="$PROJECT_DIR$/examples/CMakeLists.txt" />
         <option value="$PROJECT_DIR$/examples/basic.c" />
         <option value="$PROJECT_DIR$/include/cpu_info.h" />
+        <option value="$PROJECT_DIR$/.gitignore" />
       </list>
     </option>
   </component>
@@ -149,12 +163,12 @@
       <option name="presentableId" value="Default" />
       <updated>1516016440439</updated>
       <workItem from="1516016441577" duration="3869000" />
-      <workItem from="1516020334737" duration="2372000" />
+      <workItem from="1516020334737" duration="2412000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="6241000" />
+    <option name="totallyTimeSpent" value="6281000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="23" width="2560" height="1413" extended-state="0" />
@@ -232,14 +246,22 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/include/cpu_info.h">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="401">
-          <caret line="130" column="0" lean-forward="true" selection-start-line="130" selection-start-column="0" selection-end-line="130" selection-end-column="0" />
+        <state relative-caret-position="384">
+          <caret line="129" column="26" lean-forward="true" selection-start-line="129" selection-start-column="26" selection-end-line="129" selection-end-column="26" />
           <folding>
             <element signature="e#1204#1244#0" expanded="true" />
             <element signature="e#1275#1315#0" expanded="true" />
             <element signature="e#1531#1829#0" expanded="true" />
             <element signature="e#2560#2754#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="4" lean-forward="false" selection-start-line="0" selection-start-column="4" selection-end-line="0" selection-end-column="4" />
+          <folding />
         </state>
       </provider>
     </entry>
