@@ -10,7 +10,6 @@
 //
 
 #define CPU_INFO_IMPLEMENTATION
-
 #include <cpu_info.h>
 
 #include <stdio.h>
