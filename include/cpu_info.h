@@ -137,62 +137,61 @@ cpui_error_t cpui_get_info(cpui_result* result)
 {
 	typedef BOOL(WINAPI *glpi_t)(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION, PDWORD);
 
-    SYSTEM_INFO sysinfo;
+	SYSTEM_INFO sysinfo;
 	GetSystemInfo(&sysinfo);
 	result->logical_cores = sysinfo.dwNumberOfProcessors;
 	result->physical_cores = 0;
 
-    glpi_t glpi = (glpi_t)GetProcAddress(
-        GetModuleHandle(TEXT("kernel32")),
-        "GetLogicalProcessorInformation"
-    );
+	glpi_t glpi = (glpi_t)GetProcAddress(
+		GetModuleHandle(TEXT("kernel32")),
+		"GetLogicalProcessorInformation"
+	);
 
-    // GLPI not supported on the current system
-    if (glpi == NULL) {
-        return CPUI_ERROR_NOT_SUPPORTED;
-    }
+	// GLPI not supported on the current system
+	if (glpi == NULL) {
+		return CPUI_ERROR_NOT_SUPPORTED;
+	}
 
-    // Try and allocate buffer large enough for return info
-    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION buf = NULL;
-    DWORD ret_len = 0;
-    while (1) {
-        DWORD ret = glpi(buf, &ret_len);
-        if (ret == TRUE) {
-            break;
-        }
+	// Try and allocate buffer large enough for return info
+	PSYSTEM_LOGICAL_PROCESSOR_INFORMATION buf = NULL;
+	DWORD ret_len = 0;
+	while (1) {
+		DWORD ret = glpi(buf, &ret_len);
+		if (ret == TRUE) {
+			break;
+		}
 
-        if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+		if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
 			if (buf)
 				free(buf);
-            
-            buf = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)malloc(ret_len);
-            if (buf == NULL) {
-                return CPUI_ERROR_INVALID_MEMORY_ALLOCATION;
-            }
-        } else {
-            return CPUI_UNKNOWN;
-        }
-    }
 
-    DWORD byte_offset = 0;
-    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION next = buf;
+			buf = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)malloc(ret_len);
+			if (buf == NULL) {
+				return CPUI_ERROR_INVALID_MEMORY_ALLOCATION;
+			}
+		} else {
+			return CPUI_UNKNOWN;
+		}
+	}
+
+	DWORD byte_offset = 0;
+	PSYSTEM_LOGICAL_PROCESSOR_INFORMATION next = buf;
 	// Scan all relations between logical processors
-    while (byte_offset + sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION) <= ret_len) {
-        switch (next->Relationship)
-        {
+	while ( byte_offset + sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION) <= ret_len ) {
+		switch (next->Relationship) {
 			// Count physical cores
-            case RelationProcessorCore:
-            {
-                result->physical_cores++;
+			case RelationProcessorCore:
+			{
+				result->physical_cores++;
 				break;
-            }
-        }
+			}
+		}
 
-        byte_offset += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
-        next++;
-    }
+		byte_offset += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
+		next++;
+	}
 
-    return CPUI_SUCCESS;
+	return CPUI_SUCCESS;
 }
 
 
