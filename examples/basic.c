@@ -26,6 +26,5 @@ int main(int argc, char** argv)
         exit(EXIT_FAILURE);
     }
 
-    printf("Physical cores: %d. Logical cores: %d\n", result.physical_cores,
-           result.logical_cores);
+    cpui_log_result(stdout, &result);
 }
