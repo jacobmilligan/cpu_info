@@ -27,4 +27,5 @@ int main(int argc, char** argv)
     }
 
     cpui_log_result(stdout, &result);
+	getchar();
 }

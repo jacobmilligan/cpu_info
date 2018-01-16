@@ -4,7 +4,6 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <zconf.h>
 
 //////////////////////////////////////
 // Error config definitions
@@ -38,7 +37,7 @@ const char* const cpui_error_strings[] = {
 // Header section
 //////////////////////////////////////
 
-#define CPUI_VENDOR_STRING_SIZE 16
+#define CPUI_VENDOR_STRING_SIZE 32
 #define CPUI_BRAND_STRING_SIZE 64
 
 typedef struct {
@@ -201,6 +200,43 @@ cpui_error_t cpui_get_info(cpui_result* result)
 
 #include <Windows.h>
 
+void cpui_cpuid(uint32_t op, uint32_t* eax, uint32_t* ebx, uint32_t* ecx, uint32_t* edx)
+{
+	int regs[4];
+	__cpuid(regs, op);
+	*eax = (uint32_t)regs[0];
+	*ebx = (uint32_t)regs[1];
+	*ecx = (uint32_t)regs[2];
+	*edx = (uint32_t)regs[3];
+}
+
+void cpui_get_cache_info(cpui_result* result, CACHE_DESCRIPTOR* cd)
+{
+	switch ( cd->Level ) {
+		case 1:
+		{
+			result->cache_line_size = cd->LineSize;
+
+			if (cd->Type == CacheData) {
+				result->l1d_cache_size = cd->Size;
+			}
+
+			if ( cd->Type == CacheInstruction ) {
+				result->l1i_cache_size = cd->Size;
+			}
+		} break;
+		case 2:
+		{
+			result->l2_cache_size = cd->Size;
+		} break;
+		case 3:
+		{
+			result->l3_cache_size = cd->Size;
+		} break;
+		default: break;
+	};
+}
+
 cpui_error_t cpui_get_info(cpui_result* result)
 {
 	typedef BOOL(WINAPI *glpi_t)(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION, PDWORD);
@@ -230,7 +266,7 @@ cpui_error_t cpui_get_info(cpui_result* result)
 		}
 
 		if (GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-			if (buf)
+			if ( buf )
 				free(buf);
 
 			buf = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)malloc(ret_len);
@@ -251,13 +287,44 @@ cpui_error_t cpui_get_info(cpui_result* result)
 			case RelationProcessorCore:
 			{
 				result->physical_cores++;
-				break;
-			}
+			} break;
+
+			case RelationCache:
+			{
+				cpui_get_cache_info(result, &next->Cache);
+			} break;
+
+			default: break;
 		}
 
 		byte_offset += sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
 		next++;
 	}
+
+	// Get vendor string
+	memset(result->vendor_string, 0, sizeof(result->vendor_string));
+	uint32_t max_op = 0;
+	cpui_cpuid(0, &max_op, &result->vendor_string[0], &result->vendor_string[8], &result->vendor_string[4]);
+	
+	// Get brand string
+	uint32_t num_ids, ebx, ecx, edx;
+	cpui_cpuid(0x80000000, &num_ids, &ebx, &ecx, &edx);
+	
+	int** data = malloc(sizeof(int*) * num_ids);
+	for ( uint32_t i = 0x80000000; i <= num_ids; ++i ) {
+		data[i] = malloc(sizeof(int) * 4);
+		__cpuidex(data[i], i, 0);
+	}
+
+	memset(result->brand_string, 0, sizeof(result->brand_string));
+	memcpy(result->brand_string, data[2], sizeof(int) * 4);
+	memcpy(result->brand_string + 16, data[3], sizeof(int) * 4);
+	memcpy(result->brand_string + 32, data[4], sizeof(int) * 4);
+
+	// Free temporary data buffer
+	//if (data) {
+	//	free(data);
+	//}
 
 	return CPUI_SUCCESS;
 }
