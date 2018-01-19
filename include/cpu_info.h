@@ -332,10 +332,29 @@ cpui_error_t cpui_get_info(cpui_result* result)
 
 #else
 
+#include <string.h>
+#include <stdlib.h>
 
-int cpui_get_info(cpui_result* result)
+
+cpui_error_t cpui_get_info(cpui_result* result)
 {
-    return CPUI_ERROR_NOT_IMPLEMENTED;
+    memset(result, 0, sizeof(result));
+    result->physical_cores = 0;
+    char str[256];
+    FILE *cpuinfo = fopen("/proc/cpuinfo", "rb");
+    while ( fgets(str, sizeof(str), cpuinfo) ) {
+        if ( strncmp(str, "processor", 9) == 0 ) {
+            result->logical_cores++;
+        }
+
+        if ( strncmp(str, "cpu cores", 9) == 0 && result->physical_cores == 0 ) {
+            char* colon = strchr(str, ':');
+            if (colon != NULL ) {
+                result->physical_cores = (uint32_t)atoi(colon + 2);
+            }
+        }
+    }
+    return CPUI_SUCCESS;
 }
 
 
