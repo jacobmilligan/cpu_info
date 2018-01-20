@@ -40,6 +40,7 @@ const char* const cpui_error_strings[] = {
 #define CPUI_VENDOR_STRING_SIZE 32
 #define CPUI_BRAND_STRING_SIZE 64
 
+/// Holds all available information about the current platforms CPU hardware
 typedef struct {
     char vendor_string[CPUI_VENDOR_STRING_SIZE];
     char brand_string[CPUI_BRAND_STRING_SIZE];
@@ -52,9 +53,10 @@ typedef struct {
     size_t l3_cache_size;
 } cpui_result;
 
-
+/// Gets all info from the platforms CPU hardware and stores it in `result`
 cpui_error_t cpui_get_info(cpui_result* result);
 
+/// Logs a `cpui_result` struct to the file pointed to by `file` in a formatted fashion
 void cpui_log_result(FILE* file, cpui_result* result);
 
 
@@ -337,6 +339,9 @@ cpui_error_t cpui_get_info(cpui_result* result)
 #include <unistd.h>
 #include <ctype.h>
 
+/// Returns an integer representing the last characters position in a string
+///
+/// \return -1 for invalid string, 0 for empty string, or an integer index value
 int cpui_strend(char* str)
 {
 	if (!str) {
@@ -362,6 +367,7 @@ int cpui_strend(char* str)
 	return result;
 }
 
+/// Gets the value as an integer from the key/value pair contained within `line` pulled from `/proc/cpuinfo`
 uint32_t cpui_cpuinfo_parse_numeric(char* line, uint32_t* result)
 {
 	char* colon = strchr(line, ':');
@@ -370,6 +376,7 @@ uint32_t cpui_cpuinfo_parse_numeric(char* line, uint32_t* result)
 	}
 }
 
+/// Gets the value as a string from the key/value pair contained within `line` pulled from `/proc/cpuinfo`
 void cpui_cpuinfo_parse_string(char* line, char* result)
 {
 	char* colon = strchr(line, ':');
@@ -384,15 +391,16 @@ cpui_error_t cpui_get_info(cpui_result* result)
 {
     memset(result, 0, sizeof(cpui_result));
     char str[256];
-    FILE *cpuinfo = fopen("/proc/cpuinfo", "rb");
+	FILE *cpuinfo = fopen("/proc/cpuinfo", "rb");
 
-	// Cace
+	// Getting cache info with sysconf is portable, whereas logical/hw core info isn't
 	result->cache_line_size = (size_t)sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
 	result->l1d_cache_size = (size_t)sysconf(_SC_LEVEL1_DCACHE_SIZE);
 	result->l1i_cache_size = (size_t)sysconf(_SC_LEVEL1_ICACHE_SIZE);
 	result->l2_cache_size = (size_t)sysconf(_SC_LEVEL2_CACHE_SIZE);
 	result->l3_cache_size = (size_t)sysconf(_SC_LEVEL3_CACHE_SIZE);
 
+	// Read through cpuinfo and parse results
     while ( fgets(str, sizeof(str), cpuinfo) ) {
         if ( !strncmp(str, "processor", 9) ) {
             result->logical_cores++;
@@ -410,6 +418,8 @@ cpui_error_t cpui_get_info(cpui_result* result)
 			cpui_cpuinfo_parse_string(str, result->brand_string);
 		}
     }
+
+	fclose(cpuinfo);
 
     return CPUI_SUCCESS;
 }
