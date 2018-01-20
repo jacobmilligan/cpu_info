@@ -330,33 +330,96 @@ cpui_error_t cpui_get_info(cpui_result* result)
 }
 
 
-#else
+#elif CPUI_OS_LINUX == 1
 
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <ctype.h>
+
+int cpui_strend(char* str)
+{
+	if (!str) {
+		return -1;
+	}
+
+	if (!str[0]) {
+		return 0;
+	}
+
+	int result = -1;
+	size_t len = strlen(str);
+	for (size_t i = len; i > 0; --i) {
+		if (isspace(str[i])) {
+			result = (int)i;
+			break;
+		}
+	}
+
+	if (result == -1) {
+		return (int)len;
+	}
+	return result;
+}
+
+uint32_t cpui_cpuinfo_parse_numeric(char* line, uint32_t* result)
+{
+	char* colon = strchr(line, ':');
+	if (colon != NULL ) {
+		*result = (uint32_t)atoi(colon + 2);
+	}
+}
+
+void cpui_cpuinfo_parse_string(char* line, char* result)
+{
+	char* colon = strchr(line, ':');
+	int strend = cpui_strend(colon + 2);
+	if (colon != NULL && strend > -1 ) {
+		strncpy(result, colon + 2, (size_t)strend);
+	}
+}
 
 
 cpui_error_t cpui_get_info(cpui_result* result)
 {
-    memset(result, 0, sizeof(result));
-    result->physical_cores = 0;
+    memset(result, 0, sizeof(cpui_result));
     char str[256];
     FILE *cpuinfo = fopen("/proc/cpuinfo", "rb");
+
+	// Cace
+	result->cache_line_size = (size_t)sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
+	result->l1d_cache_size = (size_t)sysconf(_SC_LEVEL1_DCACHE_SIZE);
+	result->l1i_cache_size = (size_t)sysconf(_SC_LEVEL1_ICACHE_SIZE);
+	result->l2_cache_size = (size_t)sysconf(_SC_LEVEL2_CACHE_SIZE);
+	result->l3_cache_size = (size_t)sysconf(_SC_LEVEL3_CACHE_SIZE);
+
     while ( fgets(str, sizeof(str), cpuinfo) ) {
-        if ( strncmp(str, "processor", 9) == 0 ) {
+        if ( !strncmp(str, "processor", 9) ) {
             result->logical_cores++;
         }
 
-        if ( strncmp(str, "cpu cores", 9) == 0 && result->physical_cores == 0 ) {
-            char* colon = strchr(str, ':');
-            if (colon != NULL ) {
-                result->physical_cores = (uint32_t)atoi(colon + 2);
-            }
+        if ( !strncmp(str, "cpu cores", 9) && result->physical_cores == 0 ) {
+            cpui_cpuinfo_parse_numeric(str, &result->physical_cores);
         }
+
+		if ( !strncmp(str, "vendor_id", 9) && result->vendor_string[0] == 0 ) {
+			cpui_cpuinfo_parse_string(str, result->vendor_string);
+		}
+
+		if ( !strncmp(str, "model name", 10) && result->brand_string[0] == 0 ) {
+			cpui_cpuinfo_parse_string(str, result->brand_string);
+		}
     }
+
     return CPUI_SUCCESS;
 }
 
+#else
+
+cpui_error_t cpui_get_info(cpui_result* result)
+{
+    return CPUI_ERROR_NOT_IMPLEMENTED;
+}
 
 #endif // conditional info
 
