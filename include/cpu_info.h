@@ -389,8 +389,8 @@ void cpui_cpuinfo_parse_string(char* line, char* result)
 
 cpui_error_t cpui_get_info(cpui_result* result)
 {
-    memset(result, 0, sizeof(cpui_result));
-    char str[256];
+	memset(result, 0, sizeof(cpui_result));
+	char str[256];
 	FILE *cpuinfo = fopen("/proc/cpuinfo", "rb");
 
 	// Getting cache info with sysconf is portable, whereas logical/hw core info isn't
@@ -401,14 +401,14 @@ cpui_error_t cpui_get_info(cpui_result* result)
 	result->l3_cache_size = (size_t)sysconf(_SC_LEVEL3_CACHE_SIZE);
 
 	// Read through cpuinfo and parse results
-    while ( fgets(str, sizeof(str), cpuinfo) ) {
-        if ( !strncmp(str, "processor", 9) ) {
-            result->logical_cores++;
-        }
+	while ( fgets(str, sizeof(str), cpuinfo) ) {
+		if ( !strncmp(str, "processor", 9) ) {
+			result->logical_cores++;
+		}
 
-        if ( !strncmp(str, "cpu cores", 9) && result->physical_cores == 0 ) {
-            cpui_cpuinfo_parse_numeric(str, &result->physical_cores);
-        }
+		if ( !strncmp(str, "cpu cores", 9) && result->physical_cores == 0 ) {
+			cpui_cpuinfo_parse_numeric(str, &result->physical_cores);
+		}
 
 		if ( !strncmp(str, "vendor_id", 9) && result->vendor_string[0] == 0 ) {
 			cpui_cpuinfo_parse_string(str, result->vendor_string);
@@ -417,11 +417,11 @@ cpui_error_t cpui_get_info(cpui_result* result)
 		if ( !strncmp(str, "model name", 10) && result->brand_string[0] == 0 ) {
 			cpui_cpuinfo_parse_string(str, result->brand_string);
 		}
-    }
+	}
 
 	fclose(cpuinfo);
 
-    return CPUI_SUCCESS;
+	return CPUI_SUCCESS;
 }
 
 #else
