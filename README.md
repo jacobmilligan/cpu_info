@@ -2,6 +2,12 @@
 
 cpu_info is a lightweight, cross-platform, header-only C library for discovering information about the current platforms CPU such as logical/physical cores.
 
+## Supported Platforms
+
+* macOS 10.11+
+* Windows 10 (untested on lower versions but should work)
+* Linux
+
 ## Getting Started
 
 The library is written as a single header file, so to use just copy and paste `include/cpu_info.h` into your project.
