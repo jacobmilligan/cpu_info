@@ -200,7 +200,57 @@ cpui_error_t cpui_get_info(cpui_result* result)
 
 #elif CPUI_OS_WINDOWS == 1
 
+
+// remove a bunch of unused stuff from Windows.h (these can all be found in Windows.h)
+#define NOGDICAPMASKS     // - CC_*, LC_*, PC_*, CP_*, TC_*, RC_
+#define NOVIRTUALKEYCODES // - VK_*
+#define NOWINMESSAGES     // - WM_*, EM_*, LB_*, CB_*
+#define NOWINSTYLES       // - WS_*, CS_*, ES_*, LBS_*, SBS_*, CBS_*
+#define NOSYSMETRICS      // - SM_*
+#define NOMENUS           // - MF_*
+#define NOICONS           // - IDI_*
+#define NOKEYSTATES       // - MK_*
+#define NOSYSCOMMANDS     // - SC_*
+#define NORASTEROPS       // - Binary and Tertiary raster ops
+#define NOSHOWWINDOW      // - SW_*
+#define OEMRESOURCE       // - OEM Resource values
+#define NOATOM            // - Atom Manager routines
+#define NOCLIPBOARD       // - Clipboard routines
+#define NOCOLOR           // - Screen colors
+#define NOCTLMGR          // - Control and Dialog routines
+#define NODRAWTEXT        // - DrawText() and DT_*
+#define NOGDI             // - All GDI defines and routines
+#define NOKERNEL          // - All KERNEL defines and routines
+#define NOUSER            // - All USER defines and routines
+#define NONLS             // - All NLS defines and routines
+#define NOMB              // - MB_* and MessageBox()
+#define NOMEMMGR          // - GMEM_*, LMEM_*, GHND, LHND, associated routines
+#define NOMETAFILE        // - typedef METAFILEPICT
+#define NOMINMAX          // - Macros min(a,b) and max(a,b)
+#define NOMSG             // - typedef MSG and associated routines
+#define NOOPENFILE        // - OpenFile(), OemToAnsi, AnsiToOem, and OF_*
+#define NOSCROLL          // - SB_* and scrolling routines
+#define NOSERVICE         // - All Service Controller routines, SERVICE_ equates, etc.
+#define NOSOUND           // - Sound driver routines
+#define NOTEXTMETRIC      // - typedef TEXTMETRIC and associated routines
+#define NOWH              // - SetWindowsHook and WH_*
+#define NOWINOFFSETS      // - GWL_*, GCL_*, associated routines
+#define NOCOMM            // - COMM driver routines
+#define NOKANJI           // - Kanji support stuff.
+#define NOHELP            // - Help engine interface.
+#define NOPROFILER        // - Profiler interface.
+#define NODEFERWINDOWPOS  // - DeferWindowPos routines
+#define NOMCX             // - Modem Configuration Extensions
+
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#include <intrin.h>
+
+enum cpui_cpuid_fn_id {
+    CPUID_FN_ID_EXTENDED_MAX        = 0x80000000,
+    CPUID_FN_ID_BRAND_STRING_BEGIN  = 0x80000002,
+    CPUID_FN_ID_BRAND_STRING_END    = 0x80000004
+};
 
 void cpui_cpuid(uint32_t op, uint32_t* eax, uint32_t* ebx, uint32_t* ecx, uint32_t* edx)
 {
@@ -248,10 +298,7 @@ cpui_error_t cpui_get_info(cpui_result* result)
 	result->logical_cores = sysinfo.dwNumberOfProcessors;
 	result->physical_cores = 0;
 
-	glpi_t glpi = (glpi_t)GetProcAddress(
-		GetModuleHandle(TEXT("kernel32")),
-		"GetLogicalProcessorInformation"
-	);
+	glpi_t glpi = (glpi_t)GetProcAddress(GetModuleHandle(TEXT("kernel32")), "GetLogicalProcessorInformation");
 
 	// GLPI not supported on the current system
 	if (glpi == NULL) {
@@ -262,7 +309,7 @@ cpui_error_t cpui_get_info(cpui_result* result)
 	PSYSTEM_LOGICAL_PROCESSOR_INFORMATION buf = NULL;
 	DWORD ret_len = 0;
 	while (1) {
-		DWORD ret = glpi(buf, &ret_len);
+		BOOL ret = glpi(buf, &ret_len);
 		if (ret == TRUE) {
 			break;
 		}
@@ -306,27 +353,41 @@ cpui_error_t cpui_get_info(cpui_result* result)
 	// Get vendor string
 	memset(result->vendor_string, 0, sizeof(result->vendor_string));
 	uint32_t max_op = 0;
-	cpui_cpuid(0, &max_op, &result->vendor_string[0], &result->vendor_string[8], &result->vendor_string[4]);
-	
+	cpui_cpuid(
+	    0,
+	    &max_op,
+	    (uint32_t*)&result->vendor_string[0],
+        (uint32_t*)&result->vendor_string[8],
+        (uint32_t*)&result->vendor_string[4]
+    );
+
 	// Get brand string
-	uint32_t num_ids, ebx, ecx, edx;
-	cpui_cpuid(0x80000000, &num_ids, &ebx, &ecx, &edx);
-	
-	int** data = malloc(sizeof(int*) * num_ids);
-	for ( uint32_t i = 0x80000000; i <= num_ids; ++i ) {
-		data[i] = malloc(sizeof(int) * 4);
-		__cpuidex(data[i], i, 0);
+	uint32_t highest_ext_fn_id, ebx, ecx, edx;
+	cpui_cpuid((uint32_t)CPUID_FN_ID_EXTENDED_MAX, &highest_ext_fn_id, &ebx, &ecx, &edx);
+
+    memset(result->brand_string, 0, sizeof(result->brand_string));
+
+    // check if extended features are supported or not
+    if (highest_ext_fn_id < (uint32_t)CPUID_FN_ID_BRAND_STRING_END) {
+        return CPUI_SUCCESS;
+    }
+
+    int registers[4];
+	for (uint32_t i = 0; i <= (uint32_t)(CPUID_FN_ID_BRAND_STRING_END - CPUID_FN_ID_BRAND_STRING_BEGIN); ++i) {
+        // each call to __cpuid contains 16 ASCII chars in each of the registers represetings a part
+        // of the brand string
+		__cpuid(registers, (uint32_t)CPUID_FN_ID_BRAND_STRING_BEGIN + i);
+        memcpy(result->brand_string + i * 16, registers, sizeof(int) * 4);
 	}
 
-	memset(result->brand_string, 0, sizeof(result->brand_string));
-	memcpy(result->brand_string, data[2], sizeof(int) * 4);
-	memcpy(result->brand_string + 16, data[3], sizeof(int) * 4);
-	memcpy(result->brand_string + 32, data[4], sizeof(int) * 4);
-
-	// Free temporary data buffer
-	//if (data) {
-	//	free(data);
-	//}
+    // trim the brand name end
+    int brand_str_end = (int)strlen(result->brand_string);
+    for (int i = brand_str_end; i >= 0; --i) {
+        if (result->brand_string[i] != ' ' && result->brand_string[i] != '\0' && i < brand_str_end) {
+            result->brand_string[i + 1] = '\0';
+            break;
+        }
+    }
 
 	return CPUI_SUCCESS;
 }
